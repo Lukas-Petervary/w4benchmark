@@ -1,0 +1,29 @@
+Software License for w4_benchmark
+=================================
+
+Copyright (c) 2025 Lukas Petervary
+
+This software is released under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+
+You are free to:
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- NonCommercial — You may not use the material for commercial purposes.
+
+Full license text: https://creativecommons.org/licenses/by-nc/4.0/
+
+W4-11 Dataset
+-------------
+
+This software uses or interfaces with the W4-11 dataset by:
+Lars Goerigk and Stefan Grimme (2011),
+"A thorough benchmark of density functional methods for general main group thermochemistry, kinetics, and noncovalent interactions",
+*Physical Chemistry Chemical Physics*, 13, 6670–6688.
+
+The W4-11 dataset is the intellectual property of the original authors and is intended for academic use only.
+Redistribution of the dataset itself may be restricted by the publisher. Please consult the original publication and adhere to any associated terms.
+
+Users of this software are expected to cite the above publication when using the dataset in scientific work.
