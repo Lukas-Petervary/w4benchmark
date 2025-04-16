@@ -9,7 +9,7 @@ class Parameters(dict):
     @classmethod
     def _init_defaults(cls):
         import importlib.resources as resources
-        with resources.path('w4_benchmark', 'out.json') as path:
+        with resources.path('w4benchmark', 'out.json') as path:
             Parameters.DEFAULTS["dataset_url"] = path
 
         parser = argparse.ArgumentParser(description="Run functions based on the argument passed.")

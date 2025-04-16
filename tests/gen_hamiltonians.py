@@ -1,7 +1,7 @@
 import base64, json, numpy as np
 from pyscf import gto, scf, mcscf, ao2mo, cc
 from pyscf.data.elements import chemcore
-from w4_benchmark import W4Decorators, Molecule, W4
+from w4benchmark import W4Decorators, Molecule, W4
 
 hamiltonian_dict = {}
 

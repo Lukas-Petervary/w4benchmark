@@ -1,5 +1,5 @@
 import unittest
-from w4_benchmark import W4
+from w4benchmark import W4
 
 class TestCore(unittest.TestCase):
     def setUp(self): W4.init()

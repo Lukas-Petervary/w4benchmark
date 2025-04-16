@@ -13,8 +13,8 @@ from qiskit_addon_sqd.fermion import (
     solve_fermion,
 )
 from qiskit_addon_sqd.subsampling import postselect_and_subsample
-from w4_benchmark import *
-from w4_benchmark.Molecule import Basis
+from w4benchmark import *
+from w4benchmark.Molecule import Basis
 
 
 # Create quantum circuits using t2 amplitudes

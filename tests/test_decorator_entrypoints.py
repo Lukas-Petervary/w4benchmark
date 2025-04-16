@@ -1,4 +1,4 @@
-from w4_benchmark import W4, W4Decorators
+from w4benchmark import W4, W4Decorators
 
 @W4Decorators.process(print_values = True)
 def func1(key, value):
