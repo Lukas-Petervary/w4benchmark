@@ -1,6 +1,4 @@
-import sys
 import traceback
-
 from . import Parameters
 from .W4Map import W4
 
