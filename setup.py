@@ -13,6 +13,7 @@ Please cite the original authors. Redistribution of the dataset may be subject t
 """,
     long_description_content_type='text/plain',
     author='Lukas Petervary',
+    url='https://github.com/Lukas-Petervary/w4benchmark/',
     license='CC BY-NC 4.0',
     packages=find_packages(),
     install_requires=[
