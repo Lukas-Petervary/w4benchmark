@@ -77,7 +77,7 @@ This tool uses the **W4-11 dataset** provided by:
 
 Please **cite this publication** in any work that uses this package or the underlying dataset.
 
-⚠️ The dataset is intended for **academic use only**. Redistribution of the dataset itself may be restricted by the publisher.
+The dataset is intended for **academic use only**. Redistribution of the dataset itself may be restricted by the publisher.
 
 ## License
 
