@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='w4benchmark',
-    version='0.1.1',
+    version='0.1.2',
     long_description="""\
 An algorithm benchmarking tool built around the W4-11 dataset.
 
@@ -16,6 +16,7 @@ Please cite the original authors. Redistribution of the dataset may be subject t
     url='https://github.com/Lukas-Petervary/w4benchmark/',
     license='CC BY-NC 4.0',
     packages=find_packages(),
+    include_package_data=True,
     install_requires=[
         'numpy>=2.2.4'
     ],
