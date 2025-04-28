@@ -13,7 +13,7 @@ Designed for evaluating the performance of computational chemistry methods.
 
 Install the package via pip:
 
-    pip install w4_benchmark
+    pip install w4benchmark
 
 Requires: `numpy >= 2.2.4`
 
@@ -32,7 +32,7 @@ Both decorators support passing an arbitrary list of runtime parameters to custo
 
 Create a script like `compute.py`:
 
-    from w4_benchmark import W4Decorators, Molecule, W4
+    from w4benchmark import W4Decorators, Molecule, W4
 
     @W4Decorators.process()
     def compute_energy(name: str, mol: Molecule):
@@ -56,7 +56,7 @@ Each command will iterate over every molecule in the dataset and apply the corre
 
 If you want full control, you can manually run the W4 benchmark from within a `__main__` block:
 
-    from w4_benchmark import W4
+    from w4benchmark import W4
 
     if __name__ == '__main__':
         W4.parameters.basis = "sto6g"  # Set runtime parameters
@@ -64,7 +64,29 @@ If you want full control, you can manually run the W4 benchmark from within a `_
 
         # Example usage
         for name, mol in W4:
-            print(f"{name}: formula = {mol.formula}, charge = {mol.charge}")
+            print(f"{name}: spin = {mol.spin}, charge = {mol.charge}")
+
+## SQD Minimal Working Example
+
+The MWE illustrates the essential components of the SQD algorithm:
+
+- **Basic random quantum circuit**: A small quantum circuit is generated with random single-qubit rotations and entangling gates.
+- **Measurement simulation**: The wavefunction is sampled ideally (without noise) to generate measurement bitstrings.
+- **Electron configuration conversion**: Measurements are filtered into electron configurations.
+- **SQD execution**: A toy 4-qubit Hamiltonian is used with the SQD method to approximate the ground-state energy.
+- **Simplified output**: Key results like sampled configurations and computed energies are printed.
+
+This provides a lightweight, self-contained example of how SQD can be implemented, separate from the full W4-11 benchmark infrastructure.
+
+## Features
+
+- **No dataset dependencies**: The MWE uses a manually defined Hamiltonian rather than reading from benchmark datasets.
+- **Simple circuit creation**: Random gates are applied to generate a demonstrative quantum circuit.
+- **Ideal measurement sampling**: Bitstrings are sampled from the exact wavefunction, not from noisy hardware simulations.
+- **Subspace filtering**: Bitstrings are filtered based on electron count constraints to form a subspace.
+- **Projected Hamiltonian diagonalization**: An approximate ground-state energy is computed from the subspace.
+- **Minimal dependencies**: Only `numpy`, `qiskit`, and standard Python libraries are required.
+
 
 ## Dataset Attribution
 

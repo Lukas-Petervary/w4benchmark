@@ -23,9 +23,6 @@ def get_LUCJ_qiskit_circuit(ncas, nelecas, isCASSCF, cct2, backend, layout_strat
     nela, nelb = nelec
     nvra, nvrb = ncas - nela, ncas - nelb
     spin = nela - nelb
-    # spin = mf_as.mol().spin
-
-    # n_reps = 2
 
     if "ibm_rensselaer" == backend and layout_strategy == 'diagonal':
         pairs_aa = [(i, i + 1) for i in range(ncas - 1)]
@@ -54,14 +51,13 @@ def get_LUCJ_qiskit_circuit(ncas, nelecas, isCASSCF, cct2, backend, layout_strat
         print("Interaction pairs not defined for this backend")
 
     interaction_pairs_bal = interaction_pairs
-    interaction_pairs_unbal = (interaction_pairs[0], interaction_pairs[1], interaction_pairs[0])
 
     qubits = QuantumRegister(2 * ncas, name="q")
     lucj_circuit = QuantumCircuit(qubits)
 
     lucj_circuit.append(ffsim.qiskit.PrepareHartreeFockJW(ncas, nelec), qubits)
     lucj_circuit.barrier()
-    if ncas > 1:  # Hydrogen throws an error because there are no orbitals to excite to in the minimal basis
+    if ncas > 1:
         if isCASSCF:
             if 0 == spin:
                 ucj_op = ffsim.UCJOpSpinBalanced.from_t_amplitudes(cct2, n_reps=2,
@@ -82,16 +78,8 @@ def get_LUCJ_qiskit_circuit(ncas, nelecas, isCASSCF, cct2, backend, layout_strat
             else:
                 t2 = cct2
                 t2_tilde = np.zeros((nelb, nelb, nvrb, nvrb))
-                # # excitations from the doubly-occupied to the virtuals from the opposite-spin t2's
-                # t2_tilde[:nelb, :nelb, -nvra:, -nvra:] = t2[1][:nelb, :nelb, -nvra:, -nvra:]
-                # # excitations from the doubly-occupied to the singly occupied from the minority (beta) same-spin t2's
-                # t2_tilde[:nelb, :nelb, :spin, :spin] = t2[2][:nelb, :nelb, :spin, :spin]
-                if nvra > 0:
-                    # excitations from the doubly-occupied to the virtuals from the opposite-spin t2's
-                    t2_tilde[:nelb, :nelb, -nvra:, -nvra:] = t2[1][:nelb, :nelb, -nvra:, -nvra:]
-                else:
-                    # excitations from the doubly-occupied to the virtuals from the minority (beta) t2's
-                    t2_tilde[:nelb, :nelb, -nvra:, -nvra:] = t2[2][:nelb, :nelb, -nvra:, -nvra:]
+                if nvra > 0:    t2_tilde[:nelb, :nelb, -nvra:, -nvra:] = t2[1][:nelb, :nelb, -nvra:, -nvra:]
+                else:           t2_tilde[:nelb, :nelb, -nvra:, -nvra:] = t2[2][:nelb, :nelb, -nvra:, -nvra:]
                 # excitations from the doubly-occupied to the singly occupied from the minority (beta) same-spin t2's
                 t2_tilde[:nelb, :nelb, :spin, :spin] = t2[2][:nelb, :nelb, :spin, :spin]
                 # in the absence of spin-down particles, take excitations from spin-up t2's (e.g., in the case of hygrogen atom)

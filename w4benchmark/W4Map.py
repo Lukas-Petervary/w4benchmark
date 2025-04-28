@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+from typing import TypeVar, Generic, Iterator
 from .Molecule import Molecule
 from .Params import Parameters
 import json
@@ -11,35 +13,40 @@ class SingletonMeta(type):
             cls._instances[cls] = instance
         return cls._instances[cls]
 
+K = TypeVar('K')
+V = TypeVar('V')
 
-class ImmutableDict(dict):
-    def __setitem__(self, key, value):
-        raise self.ImmutableMutationError()
+class ImmutableDict(Mapping[K, V], Generic[K, V]):
+    def __init__(self, *args, **kwargs):
+        self._store = dict(*args, **kwargs)
 
-    def __delitem__(self, key):
-        raise self.ImmutableMutationError()
+    def __getitem__(self, key: K) -> V: return self._store[key]
+    def __iter__(self) -> Iterator[K]: return iter(self._store)
+    def __len__(self) -> int: return len(self._store)
+    def __repr__(self) -> str: return f"I{self._store!r}"
 
-    def __repr__(self):
-        return f"I{super().__repr__()}"
-
-    def copy(self):
-        return ImmutableDict(self._deep_copy(self))
+    def copy(self) -> "ImmutableDict[K, V]":
+        return ImmutableDict(self._deep_copy(self._store))
 
     def _deep_copy(self, obj):
         if isinstance(obj, dict):
-            return ImmutableDict({k: self._deep_copy(v) for k, v in obj.items()})
+            return {k: self._deep_copy(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [self._deep_copy(v) for v in obj]
         return obj
 
+    def __setitem__(self, key, value): raise self.ImmutableMutationError()
+    def __delitem__(self, key): raise self.ImmutableMutationError()
+
     class ImmutableMutationError(Exception):
-        def __init__(self): super().__init__("This data is immutable and must be explicitly dereferenced.")
+        def __init__(self):
+            super().__init__("This data is immutable and must be explicitly dereferenced.")
 
 
 class W4Map(metaclass=SingletonMeta):
     def __init__(self, params=Parameters.DEFAULTS):
         self.parameters: Parameters = Parameters(params)
-        self.data = ImmutableDict()  # Store dataset as an immutable dictionary
+        self.data: ImmutableDict[str, Molecule] = ImmutableDict()
 
     def set_dataset(self, dataset_url: str):
         """Loads a JSON dataset and maps molecule names to Molecule objects."""
@@ -55,14 +62,13 @@ class W4Map(metaclass=SingletonMeta):
         except FileNotFoundError: print(f"Error: File '{dataset_url}' not found.")
         except json.JSONDecodeError: print(f"Error: Failed to decode JSON from '{dataset_url}'.")
 
-    def save_json(self, json_file):
-        """Saves the current dataset to a JSON file."""
-        with open(json_file, 'w') as file:
-            json.dump(self.data, file, indent=4)
+    def __getitem__(self, key) -> Molecule: return self.data[key]
 
-    def __getitem__(self, key): return self.data[key]
-    def __iter__(self): return iter(self.data.keys())
     def __repr__(self): return f"W4 Data({self.data})"
+
+    def __iter__(self) -> Iterator[tuple[str, Molecule]]:
+        for key, value in self.data.items():
+            yield key, value
 
     def init(self):
         """Initializes the dataset and runs the corresponding CLI function."""

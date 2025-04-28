@@ -87,10 +87,9 @@ def iter_gen(name: str, mol: Molecule):
 
 if __name__ == '__main__':
     # uncomment to run without CLI arg "--process"
-    W4.parameters.basis = "sto6g"
-    W4.init()
-    iter_gen("o2", W4["o2"])
+    # W4.parameters.basis = "sto6g"
+    # W4.init()
     # W4Decorators.main_process()
-    # with open("hamiltonian_dataset.json", "w") as f:
-    #     json.dump(hamiltonian_dict, f, indent=4)
+    with open("hamiltonian_dataset.json", "w") as f:
+        json.dump(hamiltonian_dict, f, indent=4)
     print("Finished calculating hamiltonians.")
