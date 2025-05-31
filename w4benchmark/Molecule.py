@@ -2,7 +2,6 @@ import base64
 from dataclasses import dataclass
 import numpy as np
 
-
 @dataclass(frozen=True)
 class Molecule:
     species: str
@@ -10,25 +9,25 @@ class Molecule:
     charge: float
     """molecular geometry in the form of [(atom, (x, y, z)), ...]"""
     geom: list[(str, (float, float, float))]
-    basis: dict
+    basis: "Basis"
 
     @staticmethod
-    def parse_from_dict(name, d: dict) -> "Molecule":
+    def parse_from_dict(name, geom: dict, b: dict) -> "Molecule":
         species = name
-        spin = d["spin"]
-        charge = d["charge"]
-        geom = [(atom['element'], tuple(atom['position'][0])) for atom in d["atoms"]]
-        basis = {k: Basis.parse_basis(v) for k, v in d["basis"].items()}
+        spin = geom["spin"]
+        charge = geom["charge"]
+        geom = [(atom['element'], tuple(atom['position'])) for atom in geom["atoms"]]
+        basis = Basis.parse_basis(b)
         return Molecule(species, spin, charge, geom, basis)
 
 @dataclass(frozen=True)
 class Basis:
-    h1e: np.ndarray
-    h2e: np.ndarray
-    cct2: np.ndarray | list[np.ndarray]
     ecore: float
     ncas: int
     nelecas: tuple[int, int]
+    h1e: np.ndarray
+    h2e: np.ndarray
+    cct2: np.ndarray | list[np.ndarray]
 
     @staticmethod
     def parse_basis(basis: dict) -> "Basis":

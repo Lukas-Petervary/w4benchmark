@@ -1,16 +1,20 @@
 import argparse
+from os import PathLike
 
 class Parameters(dict):
-    DEFAULTS = {                # library required parameters
-        "dataset_url": str,    # dynamically set in package __init__.py
-        "cli_function": str,   # dynamically set in W4Map.py
+    DEFAULTS = { # library required parameters
+        "geominfo_url": PathLike,
+        "tensorinfo_url": PathLike,
+        "cli_function": str,
     }
 
     @classmethod
     def _init_defaults(cls):
         import importlib.resources as resources
-        with resources.path('w4benchmark', 'out.json') as path:
-            Parameters.DEFAULTS["dataset_url"] = path
+        with resources.path('w4benchmark', 'mol_geoms.json') as p1:
+            Parameters.DEFAULTS["geominfo_url"] = p1
+        with resources.path('w4benchmark', 'sto6g_entries.json') as p2:
+            Parameters.DEFAULTS["tensorinfo_url"] = p2
 
         parser = argparse.ArgumentParser(description="Run functions based on the argument passed.")
         parser.add_argument('--process', action='store_true', help="Run the process function")

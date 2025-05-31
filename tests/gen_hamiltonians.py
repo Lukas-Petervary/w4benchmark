@@ -21,7 +21,7 @@ def gen_hamiltonians(molecule: Molecule):
     scfMol.basis = W4.parameters.basis
     scfMol.symmetry = False
     scfMol.charge = molecule.charge
-    scfMol.spin =   int(molecule.spin - 1)
+    scfMol.spin = int(molecule.spin - 1)
     scfMol.verbose = 5
     scfMol.build()
 
@@ -30,7 +30,7 @@ def gen_hamiltonians(molecule: Molecule):
     else: mf = scf.ROHF(scfMol)
 
     mf.kernel()
-    # assert mf.converged
+    assert mf.converged
 
     # Active space computations
 
@@ -68,16 +68,12 @@ def gen_hamiltonians(molecule: Molecule):
     cc_as = cc.CCSD(mf).run() if len(frozen_orbs) == 0 else cc.CCSD(mf, frozen=frozen_orbs).run()
     # print(cc_as)
     hamiltonian_dict[molecule.species] = {
-        "basis": {
-            W4.parameters.basis: {
-                "h1e": serialize_tensor(h1e_cas),
-                "ecore": str(ecore),
-                "h2e": serialize_tensor(h2e_cas),
-                "ncas": mf_cas.ncas,
-                "nelecas": mf_cas.nelecas,
-                "cct2": serialize_tensor(cc_as.t2)
-            }
-        }
+        "ecore": str(ecore),
+        "ncas": mf_cas.ncas,
+        "nelecas": mf_cas.nelecas,
+        "h1e": serialize_tensor(h1e_cas),
+        "h2e": serialize_tensor(h2e_cas),
+        "cct2": serialize_tensor(cc_as.t2)
     }
 
 @W4Decorators.process(basis="sto6g")
@@ -87,9 +83,9 @@ def iter_gen(name: str, mol: Molecule):
 
 if __name__ == '__main__':
     # uncomment to run without CLI arg "--process"
-    # W4.parameters.basis = "sto6g"
-    # W4.init()
-    # W4Decorators.main_process()
+    W4.parameters.basis = "sto6g"
+    W4.init()
+    W4Decorators.main_process()
     with open("hamiltonian_dataset.json", "w") as f:
         json.dump(hamiltonian_dict, f, indent=4)
     print("Finished calculating hamiltonians.")

@@ -48,19 +48,31 @@ class W4Map(metaclass=SingletonMeta):
         self.parameters: Parameters = Parameters(params)
         self.data: ImmutableDict[str, Molecule] = ImmutableDict()
 
-    def set_dataset(self, dataset_url: str):
-        """Loads a JSON dataset and maps molecule names to Molecule objects."""
+    def set_dataset(self, geom_url: str, tensor_url: str):
+        """Loads JSON geometry and tensor data, and maps molecule names to Molecule objects."""
         try:
-            with open(dataset_url, 'r') as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    molecule_dict = {
-                        k: Molecule.parse_from_dict(k, v) for k, v in data.items()
-                    }
-                    self.data = ImmutableDict(molecule_dict)  # Store as immutable dictionary
-                else: raise ValueError("JSON file must contain an object at the root.")
-        except FileNotFoundError: print(f"Error: File '{dataset_url}' not found.")
-        except json.JSONDecodeError: print(f"Error: Failed to decode JSON from '{dataset_url}'.")
+            with open(geom_url, 'r') as geom_file:
+                geom_data = json.load(geom_file)
+            with open(tensor_url, 'r') as tensor_file:
+                tensor_data = json.load(tensor_file)
+
+            if not isinstance(geom_data, dict) or not isinstance(tensor_data, dict):
+                raise ValueError("Both JSON files must contain an object at the root.")
+
+            molecule_dict = {}
+            for name, geom in geom_data.items():
+                if name not in tensor_data:
+                    print(f"Warning: No tensor info for molecule '{name}', skipping.")
+                    continue
+                basis = tensor_data[name]
+                molecule_dict[name] = Molecule.parse_from_dict(name, geom, basis)
+
+            self.data = ImmutableDict(molecule_dict)
+
+        except FileNotFoundError as e:
+            print(f"Error: File not found - {e.filename}")
+        except json.JSONDecodeError as e:
+            print(f"Error: Failed to decode JSON - {e}")
 
     def __getitem__(self, key) -> Molecule: return self.data[key]
 
@@ -72,7 +84,7 @@ class W4Map(metaclass=SingletonMeta):
 
     def init(self):
         """Initializes the dataset and runs the corresponding CLI function."""
-        self.set_dataset(self.parameters.dataset_url)
+        self.set_dataset(self.parameters.geominfo_url, self.parameters.tensorinfo_url)
 
         from .Decorators import W4Decorators
         if self.parameters.cli_function == "process":
