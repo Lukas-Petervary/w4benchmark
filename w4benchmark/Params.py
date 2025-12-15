@@ -1,36 +1,55 @@
-import argparse
-from os import PathLike
+from collections import UserDict
+from pathlib import Path
+from .Logger import W4Logger
+import importlib.resources as resources
 
-class Parameters(dict):
-    DEFAULTS = { # library required parameters
-        "geominfo_url": PathLike,
-        "tensorinfo_url": PathLike,
-        "cli_function": str,
+class Parameters(UserDict):
+    """
+    A configurable parameter dictionary with default values for use in the W4Benchmark library.
+
+    Default fields:
+        - geominfo_url (PathLike): Path to mol_geoms.json
+        - resources_url (PathLike): Path to the resources directory
+        - api_url (str): REST API base URL
+        - basis (str): Basis set name
+        - cli_function (str): Function to invoke from CLI ('process' or 'analyze')
+        - debug (int): Debug level for logging output
+    """
+
+    DEFAULTS: dict = {
+        "geominfo_url": Path,
+        "resources_url": Path,
+        "api_url": str,
+        "basis": str,
+        "debug": int
     }
 
-    @classmethod
-    def _init_defaults(cls):
-        import importlib.resources as resources
-        with resources.path('w4benchmark', 'mol_geoms.json') as p1:
-            Parameters.DEFAULTS["geominfo_url"] = p1
-        with resources.path('w4benchmark', 'sto6g_entries.json') as p2:
-            Parameters.DEFAULTS["tensorinfo_url"] = p2
+    def __init__(self, **kwargs):
+        super().__init__({**Parameters.DEFAULTS, **kwargs})
 
-        parser = argparse.ArgumentParser(description="Run functions based on the argument passed.")
-        parser.add_argument('--process', action='store_true', help="Run the process function")
-        parser.add_argument('--analyze', action='store_true', help="Run the analyze function")
-        args = parser.parse_args()
+    @staticmethod
+    def _gen_defaults() -> None:
+        try:
+            with resources.path('w4benchmark.resources', 'mol_geoms.json') as f_geom:
+                Parameters.DEFAULTS["geominfo_url"] = f_geom
+            with resources.path('w4benchmark', 'resources') as res_dir:
+                Parameters.DEFAULTS["resources_url"] = res_dir
+        except FileNotFoundError:
+            W4Logger.critical("Could not find default resources directory")
 
-        if args.process:
-            Parameters.DEFAULTS["cli_function"] = "process"
-        elif args.analyze:
-            Parameters.DEFAULTS["cli_function"] = "analyze"
+        Parameters.DEFAULTS["api_url"] = "https://w4dataset.foci.rpi.edu"
+        Parameters.DEFAULTS["basis"] = 'sto6g'
+        Parameters.DEFAULTS["debug"] = W4Logger.getEffectiveLevel()
 
-    def __init__(self, copy: dict, **kwargs):
-        super().__init__(self.DEFAULTS)
-        self.update(copy)
-        self.update(kwargs)
+    def __getattr__(self, key):
+        if key == "data" or "data" not in self.__dict__:
+            return super().__getattribute__(key)
+        return self.data[key]
 
-    def __getattr__(self, item): return self[item]
-    def __setattr__(self, key, value): self[key] = value
+    def __setattr__(self, key, value):
+        if key == "data" or "data" not in self.__dict__:
+            super().__setattr__(key, value)
+        else:
+            self.data[key] = value
+
     def __repr__(self): return f"Parameters({super().__repr__()})"

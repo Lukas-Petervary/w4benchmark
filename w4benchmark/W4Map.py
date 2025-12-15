@@ -1,8 +1,10 @@
 from collections.abc import Mapping
+from pathlib import Path
 from typing import TypeVar, Generic, Iterator
 from .Molecule import Molecule
 from .Params import Parameters
-import json
+from .Logger import W4Logger
+import json, requests, shutil, argparse
 
 class SingletonMeta(type):
     _instances = {}
@@ -44,35 +46,76 @@ class ImmutableDict(Mapping[K, V], Generic[K, V]):
 
 
 class W4Map(metaclass=SingletonMeta):
-    def __init__(self, params=Parameters.DEFAULTS):
-        self.parameters: Parameters = Parameters(params)
+    """
+    Singleton wrapper for the W4 dataset manager.
+
+    This class is responsible for coordinating access to W4 benchmark data,
+    including downloading tensor data from a remote API, reading associated
+    geometry and tensor files, parsing them into `Molecule` objects, and storing
+    them in an immutable dictionary for safe usage across the application.
+
+    Attributes:
+        parameters (Parameters): The current configuration, including API URLs and options.
+        data (ImmutableDict[str, Molecule]): Mapping from molecule names to Molecule instances.
+
+    Functions:
+        init():
+            Initializes the W4 dataset. If the data file doesn't exist locally,
+        it fetches it from the API. It then loads the dataset and triggers the
+        appropriate decorated CLI function (process or analyze).
+    """
+    def __init__(self):
+        self.parameters: Parameters = Parameters()
         self.data: ImmutableDict[str, Molecule] = ImmutableDict()
 
-    def set_dataset(self, geom_url: str, tensor_url: str):
-        """Loads JSON geometry and tensor data, and maps molecule names to Molecule objects."""
+    def _api_call(self, basis_name: str) -> Path:
         try:
-            with open(geom_url, 'r') as geom_file:
-                geom_data = json.load(geom_file)
-            with open(tensor_url, 'r') as tensor_file:
-                tensor_data = json.load(tensor_file)
+            url = self.parameters.api_url + "/entries/" + basis_name
+            response = requests.get(url, headers={"Accept": "application/json"}, stream=True)
+            response.raw.decode_content = True
 
-            if not isinstance(geom_data, dict) or not isinstance(tensor_data, dict):
-                raise ValueError("Both JSON files must contain an object at the root.")
+            if response.status_code == 200:
+                outfile = Path(self.parameters.resources_url) / f'{basis_name}.json'
+                W4Logger.debug(f'Downloading {basis_name} entries...')
+                with open(outfile, "wb") as f:
+                    shutil.copyfileobj(response.raw, f)
+                return outfile.resolve()
 
-            molecule_dict = {}
-            for name, geom in geom_data.items():
-                if name not in tensor_data:
-                    print(f"Warning: No tensor info for molecule '{name}', skipping.")
-                    continue
-                basis = tensor_data[name]
-                molecule_dict[name] = Molecule.parse_from_dict(name, geom, basis)
+            elif response.status_code == 404: raise FileNotFoundError(f"Basis not found (404): {basis_name}")
+            elif response.status_code == 500: raise RuntimeError("Server error (500).")
+            else: response.raise_for_status()
 
-            self.data = ImmutableDict(molecule_dict)
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"API request failed: {e}")
 
-        except FileNotFoundError as e:
-            print(f"Error: File not found - {e.filename}")
-        except json.JSONDecodeError as e:
-            print(f"Error: Failed to decode JSON - {e}")
+    @staticmethod
+    def _lazy_load_tensor(tensor_url: Path):
+        with open(tensor_url, 'r') as tensor_file:
+            while True:
+                line = tensor_file.readline()
+                if line: yield json.loads(line)
+                else:    break
+
+    def _set_dataset(self, tensor_url: Path):
+        """Loads JSON geometry and tensor data, and maps molecule names to Molecule objects."""
+        with open(self.parameters.geominfo_url, 'r') as geom_file:
+            geom_data = json.load(geom_file)
+
+        molecule_dict = {}
+        for element in self._lazy_load_tensor(tensor_url):
+            if "$basis" in element:
+                if element['$basis'] != W4.parameters.basis:
+                    raise TypeError(f"Basis '{element['$basis']}' of dataset '{tensor_url}' does not match basis '{W4.parameters.basis}'")
+                else: continue
+
+            species = element['name']
+            if species not in geom_data:
+                W4Logger.warn(f'Molecule "{species}" not found in molecule geometries')
+                continue
+            geom = geom_data[species]
+            molecule_dict[species] = Molecule.parse_from_dict(species, geom, element)
+
+        self.data = ImmutableDict(molecule_dict)
 
     def __getitem__(self, key) -> Molecule: return self.data[key]
 
@@ -83,16 +126,26 @@ class W4Map(metaclass=SingletonMeta):
             yield key, value
 
     def init(self):
-        """Initializes the dataset and runs the corresponding CLI function."""
-        self.set_dataset(self.parameters.geominfo_url, self.parameters.tensorinfo_url)
+        if self.data: return
 
-        from .Decorators import W4Decorators
-        if self.parameters.cli_function == "process":
-            W4Decorators.main_process()
-        elif self.parameters.cli_function == "analyze":
-            W4Decorators.main_analyze()
+        if W4.parameters["debug"]:
+            W4Logger.setLevel(W4.parameters["debug"])
 
+        W4Logger.debug("Initializing dataset")
+        if self.parameters.basis is None:
+            W4Logger.critical("No basis specified.")
+            return
+
+        local_file = self.parameters.resources_url / f"{self.parameters.basis}.json"
+        if local_file.exists():
+            tensor_file = local_file
+        else:
+            W4Logger.info(f"Querying API data for basis '{self.parameters.basis}' ...")
+            tensor_file = self._api_call(self.parameters.basis)
+        W4Logger.debug(f"Loading data from {local_file}")
+
+        self._set_dataset(tensor_file)
 
 # Initialize W4Map Singleton
-Parameters._init_defaults()
-W4 = W4Map(Parameters.DEFAULTS)
+Parameters._gen_defaults()
+W4 = W4Map()

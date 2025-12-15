@@ -1,2 +1,1 @@
-include w4benchmark/mol_geoms.json
-include w4benchmark/sto6g_entries.json
+recursive-include w4benchmark/resources *

@@ -15,7 +15,7 @@ Install the package via pip:
 
     pip install w4benchmark
 
-Requires: `numpy >= 2.2.4`
+Requires: `Python 3.6+, numpy >= 2.2.4, requests >= 2.32.3`
 
 ## Usage
 
@@ -26,7 +26,14 @@ This package provides two main decorators:
 
 Each decorated function **must accept exactly two parameters**: the molecule name (`str`) and a `Molecule` object.
 
-Both decorators support passing an arbitrary list of runtime parameters to customize the execution over the entire dataset.
+Each decorator accepts a list of runtime parameters, with a predefined set of variables set by default at decoration time:
+- `geominfo_url`: specifies the directory of species geometries data file
+- `resources_url`: specifies the root of the resources directory for finding cached basis sets, geometries and more
+- `api_url`: the URL to query for basis set info if the specified basis is not found in resources directory
+- `basis`: the basis information to parse from resource directory (defaults to "sto6g", and if set to a value not found in resources will query from `api_url`)
+- `debug`: the debug level for logging output (defaults to `logging.WARNING`)
+
+All parameters can be queried and modified during runtime via the `W4.parameters` object. Arbitrary parameters can be added and queried at runtime to keep track of other runtime parameters for specific endpoints (ex. `@W4Decorators.process( printValues = true )` will add a field `printValues` to `W4.parameters` with a value of `true`).
 
 ### Example: Script with Decorators
 
@@ -34,11 +41,11 @@ Create a script like `compute.py`:
 
     from w4benchmark import W4Decorators, Molecule, W4
 
-    @W4Decorators.process()
+    @W4Decorators.process(basis="sto6g", debug=logging.DEBUG)
     def compute_energy(name: str, mol: Molecule):
         # Replace with real computation
 
-    @W4Decorators.analyze()
+    @W4Decorators.analyze(basis="sto6g")
     def analyze_results(name: str, mol: Molecule):
         # Replace with real analytics
 
@@ -52,7 +59,7 @@ or:
 
 Each command will iterate over every molecule in the dataset and apply the corresponding decorated function.
 
-### Manual Execution
+### Manual Iteration
 
 If you want full control, you can manually run the W4 benchmark from within a `__main__` block:
 
@@ -60,12 +67,13 @@ If you want full control, you can manually run the W4 benchmark from within a `_
 
     if __name__ == '__main__':
         W4.parameters.basis = "sto6g"  # Set runtime parameters
-        W4.init()
+        W4.init() # manual execution requires the .init() function to be called
 
         # Example usage
         for name, mol in W4:
             print(f"{name}: spin = {mol.spin}, charge = {mol.charge}")
 
+This allows you to iterate through the dataset as a normal iterable. You can also dereference `W4` with a specific species if you want to select a singular molecule object (ex. `W4["acetaldehyde"]`).
 ## SQD Minimal Working Example
 
 The MWE illustrates the essential components of the SQD algorithm:
