@@ -23,8 +23,7 @@ def db_post(name: str, mol: Molecule):
         "ecore": str(mol.basis.ecore),
         "nelecas": list(mol.basis.nelecas),
         "h1e": serialize_tensor(mol.basis.h1e),
-        "h2e": serialize_tensor(mol.basis.h2e),
-        "cct2": serialize_tensor(mol.basis.cct2)
+        "h2e": serialize_tensor(mol.basis.h2e)
     }
 
     if W4.parameters.post:
@@ -37,14 +36,3 @@ def db_post(name: str, mol: Molecule):
             print(f"{name} Failed {response.status_code}: {response.reason}")
     else:
         print({k: v for k, v in _data.items() if k not in {"h1e", "h2e", "cct2"}})
-
-
-def has_zero_dim(tensor) -> bool:
-    if isinstance(tensor, list):            return any(has_zero_dim(t) for t in tensor)
-    elif isinstance(tensor, np.ndarray):    return 0 in tensor.shape
-    else:   raise TypeError("Input must be a numpy array or list of numpy arrays")
-
-@W4Decorators.analyze(basis="sto6g", debug=10)
-def check_sto6g(name: str, mol: Molecule):
-    if has_zero_dim(mol.basis.cct2):
-        print(f"{name} has 0dim tensor")

@@ -37,7 +37,7 @@ class Parameters(UserDict):
         except FileNotFoundError:
             W4Logger.critical("Could not find default resources directory")
 
-        Parameters.DEFAULTS["api_url"] = "https://w4dataset.foci.rpi.edu"
+        Parameters.DEFAULTS["api_url"] = "https://w4.quantummanybody.com"
         Parameters.DEFAULTS["basis"] = 'sto6g'
         Parameters.DEFAULTS["debug"] = W4Logger.getEffectiveLevel()
 

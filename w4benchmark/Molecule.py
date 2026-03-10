@@ -29,7 +29,7 @@ class Molecule:
         spin = mol["spin"]
         charge = mol["charge"]
         geom = [(atom['element'], tuple(atom['position'])) for atom in mol["atoms"]]
-        basis = Basis.parse_basis(b)
+        basis = Basis.parse_basis(b) if b else None
         return Molecule(species, spin, charge, geom, basis)
 
 @dataclass(frozen=True)
@@ -43,7 +43,6 @@ class Basis:
             nelecas (Tuple[int, int]): Number of electrons in the CAS (alpha, beta).
             h1e (np.ndarray): One-electron integrals.
             h2e (np.ndarray): Two-electron integrals.
-            cct2 (Union[np.ndarray, List[np.ndarray]]): Coupled cluster T2 amplitudes.
     """
 
     ecore: float
@@ -51,14 +50,12 @@ class Basis:
     nelecas: tuple[int, int]
     h1e: np.ndarray
     h2e: np.ndarray
-    cct2: Union[np.ndarray, List[np.ndarray]]
 
     @staticmethod
     def parse_basis(basis: dict) -> "Basis":
         return Basis(
             h1e=unpack_tensor(basis["h1e"]),
             h2e=unpack_tensor(basis["h2e"]),
-            cct2=unpack_tensor(basis["cct2"]),
             ecore=float(basis["ecore"]),
             ncas=int(basis["ncas"]),
             nelecas=tuple(basis["nelecas"])

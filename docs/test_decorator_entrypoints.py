@@ -12,4 +12,4 @@ def func2(key: str, value: Molecule):
     print(key if W4.parameters.print_keys else value)
 
 if __name__ == '__main__':
-    print("MAIN ENTRYPOINT")
+    print("== MAIN ENTRYPOINT ==")

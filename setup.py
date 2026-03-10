@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='w4benchmark',
-    version='1.0.0-alpha.1',
+    version='1.0.0-alpha.2',
     description="An algorithm benchmarking tool built around the W4-11 dataset. Can be found on GitHub @ https://github.com/Lukas-Petervary/w4benchmark/",
     long_description="""\
 An algorithm benchmarking tool built around the W4-11 dataset.
